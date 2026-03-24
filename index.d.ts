@@ -1,6 +1,15 @@
 /* PEG API Types */
 export declare function parse(input: string, options?: Options): GIFTQuestion[];
 
+export interface TrueFalseResult {
+  isCorrect: boolean;
+  correctAnswer: boolean;
+  feedback: string | null;
+  globalFeedback: string | null;
+}
+
+export declare function checkTrueFalseAnswer(parsedQuestion: TrueFalse, studentAnswer: boolean): TrueFalseResult;
+
 export declare class SyntaxError extends Error {
   location: LocationRange;
   expected: Expectation[];
