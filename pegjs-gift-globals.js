@@ -186,7 +186,18 @@
                 subanswer:right}; 
                 return matchPair },
         peg$c24 = peg$otherExpectation("{T} or {F} or {TRUE} or {FALSE}"),
-        peg$c25 = function(isTrue, feedback, globalFeedback) { return { type:"TF", isTrue: isTrue, feedback:feedback, globalFeedback:globalFeedback}; },
+        peg$c25 = function(isTrue, feedback, globalFeedback) { return { 
+              type:"TF", 
+              isTrue: isTrue, 
+              feedback:feedback, 
+              globalFeedback:globalFeedback,
+              calculateScore: function(userAnswer) {
+                return (userAnswer === this.isTrue) ? 100 : 0;
+              },
+              isCorrect: function(userAnswer) {
+                return userAnswer === this.isTrue;
+              }
+            }; },
         peg$c26 = function(isTrue) { return isTrue },
         peg$c27 = "TRUE",
         peg$c28 = peg$literalExpectation("TRUE", false),
@@ -199,7 +210,25 @@
         peg$c35 = peg$literalExpectation("F", false),
         peg$c36 = function() {return false},
         peg$c37 = peg$otherExpectation("{=correct choice ~incorrect choice ... }"),
-        peg$c38 = function(choices, globalFeedback) { return { type: "MC", choices:choices, globalFeedback:globalFeedback}; },
+        peg$c38 = function(choices, globalFeedback) { return { 
+              type: "MC", 
+              choices:choices, 
+              globalFeedback:globalFeedback,
+              calculateScore: function(selectedChoices) {
+                if (!Array.isArray(selectedChoices)) return 0;
+                return selectedChoices.reduce((total, selectedChoice) => {
+                  // Find the choice in our choices array
+                  const choice = this.choices.find(c => 
+                    (c.text && selectedChoice.text && c.text.text === selectedChoice.text.text) ||
+                    c === selectedChoice
+                  );
+                  if (choice) {
+                    return total + (choice.weight !== null ? choice.weight : (choice.isCorrect ? 100 : 0));
+                  }
+                  return total;
+                }, 0);
+              }
+            }; },
         peg$c39 = peg$otherExpectation("Choices"),
         peg$c40 = function(choices) { return choices; },
         peg$c41 = peg$otherExpectation("Choice"),
@@ -3337,6 +3366,10 @@
         }
         question.id = questionId;
         question.tags = questionTags;
+        // Copy calculateScore method if it exists
+        if (answers.calculateScore) {
+          question.calculateScore = answers.calculateScore;
+        }
         return question;
       }
       function areAllCorrect(choices) {

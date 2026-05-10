@@ -52,6 +52,10 @@
     if (answers.calculateScore) {
       question.calculateScore = answers.calculateScore;
     }
+    // Copy isCorrect method if it exists
+    if (answers.isCorrect) {
+      question.isCorrect = answers.isCorrect;
+    }
     return question;
   }
   function areAllCorrect(choices) {
@@ -161,6 +165,9 @@ TrueFalseAnswer "{T} or {F} or {TRUE} or {FALSE}"
       globalFeedback:globalFeedback,
       calculateScore: function(userAnswer) {
         return (userAnswer === this.isTrue) ? 100 : 0;
+      },
+      isCorrect: function(userAnswer) {
+        return userAnswer === this.isTrue;
       }
     }; }
   
