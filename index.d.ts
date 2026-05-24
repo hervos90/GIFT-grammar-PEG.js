@@ -165,7 +165,7 @@ export interface TrueFalse extends Question {
   trueFeedback: TextFormat | null;
   falseFeedback: TextFormat | null;
   calculateScore(userAnswer: boolean): number;
-  isCorrect(studentAnswer: boolean): boolean;
+  isCorrect(userAnswer: boolean): boolean;
 }
 
 export interface Matching extends Question {

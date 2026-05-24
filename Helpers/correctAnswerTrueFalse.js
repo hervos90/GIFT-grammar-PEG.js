@@ -2,7 +2,7 @@ const { parse } = require("../pegjs-gift.js");
 
 function checkTrueFalseAnswer(giftText, studentAnswer) {
   var questions = parse(giftText);
-
+ 
   if (questions.length === 0 || questions[0].type !== "TF") {
     throw new Error("Not a True/False question");
   }
@@ -12,6 +12,7 @@ function checkTrueFalseAnswer(giftText, studentAnswer) {
   var feedback = studentAnswer ? question.trueFeedback : question.falseFeedback;
 
   return {
+    question: question,
     isCorrect: isCorrect,
     correctAnswer: question.isTrue,
     feedback: feedback ? feedback.text : null,

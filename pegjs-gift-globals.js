@@ -3370,6 +3370,10 @@
         if (answers.calculateScore) {
           question.calculateScore = answers.calculateScore;
         }
+        // Copy isCorrect method if it exists
+        if (answers.isCorrect) {
+          question.isCorrect = answers.isCorrect;
+        }
         return question;
       }
       function areAllCorrect(choices) {

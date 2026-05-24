@@ -48,6 +48,14 @@
     }
     question.id = questionId;
     question.tags = questionTags;
+    // Copy calculateScore method if it exists
+    if (answers.calculateScore) {
+      question.calculateScore = answers.calculateScore;
+    }
+    // Copy isCorrect method if it exists
+    if (answers.isCorrect) {
+      question.isCorrect = answers.isCorrect;
+    }
     return question;
   }
   function areAllCorrect(choices) {
@@ -150,7 +158,18 @@ TrueFalseAnswer "{T} or {F} or {TRUE} or {FALSE}"
   = isTrue:TrueOrFalseType _ 
     feedback:(Feedback? Feedback?) _
     globalFeedback:GlobalFeedback?
-  { return { type:"TF", isTrue: isTrue, feedback:feedback, globalFeedback:globalFeedback}; }
+  { return { 
+      type:"TF", 
+      isTrue: isTrue, 
+      feedback:feedback, 
+      globalFeedback:globalFeedback,
+      calculateScore: function(userAnswer) {
+        return (userAnswer === this.isTrue) ? 100 : 0;
+      },
+      isCorrect: function(userAnswer) {
+        return userAnswer === this.isTrue;
+      }
+    }; }
   
 TrueOrFalseType 
   = isTrue:(TrueType / FalseType) { return isTrue }
@@ -165,7 +184,25 @@ FalseType
 MCAnswers "{=correct choice ~incorrect choice ... }"
   = choices:Choices _ 
     globalFeedback:GlobalFeedback? _
-  { return { type: "MC", choices:choices, globalFeedback:globalFeedback}; }
+  { return { 
+      type: "MC", 
+      choices:choices, 
+      globalFeedback:globalFeedback,
+      calculateScore: function(selectedChoices) {
+        if (!Array.isArray(selectedChoices)) return 0;
+        return selectedChoices.reduce((total, selectedChoice) => {
+          // Find the choice in our choices array
+          const choice = this.choices.find(c => 
+            (c.text && selectedChoice.text && c.text.text === selectedChoice.text.text) ||
+            c === selectedChoice
+          );
+          if (choice) {
+            return total + (choice.weight !== null ? choice.weight : (choice.isCorrect ? 100 : 0));
+          }
+          return total;
+        }, 0);
+      }
+    }; }
 
 Choices "Choices"
   = choices:(Choice)+ { return choices; }
