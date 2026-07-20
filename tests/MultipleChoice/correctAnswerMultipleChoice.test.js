@@ -7,6 +7,9 @@ describe('vérifierRéponseQCM', () => {
     expect(res.score).toBe(100);
     expect(res.isCorrect).toBe(true);
     expect(res.correctChoices.length).toBe(1);
+    expect(res.totalCorrectOptions).toBe(1);
+    expect(res.userSelectedCount).toBe(1);
+    expect(res.selectedCorrectOptionsCount).toBe(1);
   });
 
   test('réponse unique correcte renvoie 100 (par chaîne)', () => {
@@ -25,8 +28,12 @@ describe('vérifierRéponseQCM', () => {
 
   test('sélection vide ou indéfinie renvoie 0', () => {
     const gift = `:: MC :: Which is correct? {=Correct ~Wrong1 ~Wrong2}`;
-    expect(checkMC(gift, []).score).toBe(0);
-    expect(checkMC(gift, undefined).score).toBe(0);
+    const resEmpty = checkMC(gift, []);
+    expect(resEmpty.score).toBe(0);
+    expect(resEmpty.userSelectedCount).toBe(0);
+    const resUndefined = checkMC(gift, undefined);
+    expect(resUndefined.score).toBe(0);
+    expect(resUndefined.userSelectedCount).toBe(0);
   });
 
 });

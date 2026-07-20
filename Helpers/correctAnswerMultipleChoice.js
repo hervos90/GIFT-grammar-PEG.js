@@ -18,12 +18,19 @@ function checkMultipleChoiceAnswer(giftText, studentSelection) {
   const correctChoices = (question.choices || []).filter(c => c.isCorrect);
   const feedback = (normalized || []).map(c => (c && c.feedback) ? c.feedback.text : null);
 
+  const totalCorrectOptions = correctChoices.length;
+  const userSelectedCount = (normalized || []).length;
+  const selectedCorrectOptionsCount = (normalized || []).filter(c => c && c.isCorrect).length;
+
   return {
     question: question,
     score: score,
     isCorrect: isCorrect,
     selected: normalized,
     correctChoices: correctChoices,
+    totalCorrectOptions: totalCorrectOptions,
+    userSelectedCount: userSelectedCount,
+    selectedCorrectOptionsCount: selectedCorrectOptionsCount,
     feedback: feedback,
     globalFeedback: question.globalFeedback ? question.globalFeedback.text : null
   };
