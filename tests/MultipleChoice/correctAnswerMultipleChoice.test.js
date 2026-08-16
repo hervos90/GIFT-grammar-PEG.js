@@ -28,6 +28,7 @@ describe('vérifierRéponseQCM', () => {
   test('réponse incorrecte pénalisée à -50% donne un score négatif', () => {
     const gift = `:: Mathématiques ::\nLesquels sont pairs? {=%50%2 ~%-50%3 =%50%4}`;
     const resWrong = checkMC(gift, [1]);
+    //--score négagatif attendu
     expect(resWrong.score).toBeCloseTo(-50, 4);
     expect(resWrong.userSelectedCount).toBe(1);
     expect(resWrong.selectedCorrectOptionsCount).toBe(0);
@@ -76,6 +77,7 @@ describe('vérifierRéponseQCM', () => {
     expect(resCorrectThree.weightTotalValid).toBe(true);
 
     const resPenaltyOne = checkMC(gift, [2]);
+    //--score négagatif attendu
     expect(resPenaltyOne.score).toBeCloseTo(-100, 4);
     expect(resPenaltyOne.totalCorrectOptions).toBe(3);
     expect(resPenaltyOne.userSelectedCount).toBe(1);
@@ -103,7 +105,78 @@ describe('vérifierRéponseQCM', () => {
     const resInvalid = checkMC(invalidGift, [0,1,3]);
     expect(resInvalid.weightedCorrectTotal).toBeCloseTo(110, 4);
     expect(resInvalid.weightTotalValid).toBe(false);
-    expect(resInvalid.weightValidationError).toBe('Le total des poids corrects doit égaler 100');
+    expect(resInvalid.weightValidationError).toBe('Weighted correct choices total must equal 100');
   });
 
+  // Tests pour vérifier qu'une réponse correcte existe
+  test('vérifier qu\'une réponse correcte existe - cas valide', () => {
+    const gift = `:: QCM simple :: Quel est le bon choix? {=Correct ~Faux1 ~Faux2}`;
+    const res = checkMC(gift, [0]);
+    expect(res.hasCorrectAnswer).toBe(true);
+    expect(res.answerValidationError).toBeNull();
+  });
+
+  test('vérifier qu\'une réponse correcte existe - aucune bonne réponse définie', () => {
+    const gift = `:: QCM sans réponse :: Quel est le bon choix? {~Faux1 ~Faux2 ~Faux3}`;
+    const res = checkMC(gift, []);
+    expect(res.hasCorrectAnswer).toBe(false);
+    expect(res.answerValidationError).toBe('No correct answer defined for this question');
+    expect(res.isCorrect).toBe(false);
+  });
+
+  test('vérifier qu\'une réponse correcte existe - pondérée valide', () => {
+    const gift = `:: Sciences naturelles ::\nLesquels sont des mammifères? {=%50%Chat ~Poisson =%50%Chien}`;
+    const res = checkMC(gift, [0]);
+    expect(res.hasCorrectAnswer).toBe(true);
+    expect(res.answerValidationError).toBeNull();
+    expect(res.totalCorrectOptions).toBe(2);
+  });
+
+  test('vérifier qu\'une réponse correcte existe - avec pénalité et réponses correctes', () => {
+    const gift = `:: Mathématiques ::\nLesquels sont pairs? {=%50%2 ~%-50%3 =%50%4}`;
+    const res = checkMC(gift, [1]);
+    expect(res.hasCorrectAnswer).toBe(true);
+    expect(res.answerValidationError).toBeNull();
+    expect(res.totalCorrectOptions).toBe(2);
+  });
+//-----limitation de la note entre -100 et 100%
+  test('note limitée entre -100 et 100%', () => {
+    const gift = `:: Mathématiques ::\nLesquels sont pairs? {=%50%2 ~%-50%3 =%50%4}`;
+
+    const resBelowMin = checkMC(gift, [1,1]);
+    expect(resBelowMin.score).toBe(-100);
+
+    const resAboveMax = checkMC(gift, [0,2]);
+    expect(resAboveMax.score).toBe(100);
+
+    const resNormal = checkMC(gift, [0]);
+    expect(resNormal.score).toBe(50);
+  });
+
+  test('note limitée avec plusieurs fractions positives et négatives', () => {
+    const gift = `:: Chimie élémentaire ::\nLesquels sont des éléments? {=%33.33333%Oxygène =%33.33333%Azote ~%-100%Eau =%33.33333%Carbone ~%-100%Sucre}`;
+    const resHugePenalty = checkMC(gift, [2,4]);
+    expect(resHugePenalty.score).toBe(-100);
+
+    const resHugeReward = checkMC(gift, [0,1,3]);
+    // 33.33333 * 3 may be slightly above 100 due to float precision, clamped to 100
+    expect(resHugeReward.score).toBeCloseTo(100, 2);
+  });
+
+  test('tentative de dépasser 100% - doit être limité à 100', () => {
+    // Trois réponses correctes de 50% chacune = 150%, doit être clampé à 100
+    // Ajout d'une mauvaise réponse pour garder le type MC (sinon converti en Short)
+    const gift = `:: Test limite haute ::\nQuelle combinaison? {=%50%Réponse1 =%50%Réponse2 =%50%Réponse3 ~Mauvaise}`;
+    const resAboveMax = checkMC(gift, [0, 1, 2]);
+    expect(resAboveMax.score).toBe(100);
+    expect(resAboveMax.score).not.toBe(150);
+  });
+
+  test('tentative de descendre sous -100% - doit être limité à -100', () => {
+    // Trois pénalités de -50% chacune = -150%, doit être clampé à -100
+    const gift = `:: Test limite basse ::\nQuelle combinaison? {~%-50%Mauvais1 ~%-50%Mauvais2 ~%-50%Mauvais3}`;
+    const resBelowMin = checkMC(gift, [0, 1, 2]);
+    expect(resBelowMin.score).toBe(-100);
+    expect(resBelowMin.score).not.toBe(-150);
+  });
 });

@@ -215,18 +215,26 @@
               choices:choices, 
               globalFeedback:globalFeedback,
               calculateScore: function(selectedChoices) {
+                // Calcule la note d'une question à choix multiples en additionnant les poids
+                // (fractions comme %50%, %-25%, etc. parsées par la règle PercentValue) de tous
+                // les choix sélectionnés. Supporte les fractions négatives pour les pénalités.
+                // La note finale est limitée entre -100 et 100%.
                 if (!Array.isArray(selectedChoices)) return 0;
-                return selectedChoices.reduce((total, selectedChoice) => {
-                  // Find the choice in our choices array
+                const total = selectedChoices.reduce((sum, selectedChoice) => {
+                  // Cherche le choix dans le tableau des choix
                   const choice = this.choices.find(c => 
                     (c.text && selectedChoice.text && c.text.text === selectedChoice.text.text) ||
                     c === selectedChoice
                   );
                   if (choice) {
-                    return total + (choice.weight !== null ? choice.weight : (choice.isCorrect ? 100 : 0));
+                    return sum + (choice.weight !== null ? choice.weight : (choice.isCorrect ? 100 : 0));
                   }
-                  return total;
+                  return sum;
                 }, 0);
+                // Limite la note à l'intervalle autorisé : entre -100 et 100%.
+                // Assure que les notes restent dans l'intervalle de notation acceptable même avec des
+                // combinaisons extrêmes de pénalités et de récompenses.
+                return Math.min(100, Math.max(-100, total));
               }
             }; },
         peg$c39 = peg$otherExpectation("Choices"),
