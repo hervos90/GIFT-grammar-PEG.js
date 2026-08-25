@@ -6,6 +6,7 @@ describe("checkTrueFalseAnswer", () => {
     const question = "::Question1::5 + 6 \\= 11. {T#Bonne réponse !#Mauvaise réponse.####Ceci est un fait scientifique juste un test.}";
     const result = checkTrueFalseAnswer(question, true);
     expect(result.isCorrect).toBe(true);
+    expect(result.question.isCorrect(true)).toBe(true);
     expect(result.correctAnswer).toBe(true);
   });
 
