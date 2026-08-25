@@ -259,7 +259,14 @@ SingleCorrectShortAnswer "Single short answer { ... }"
     globalFeedback:GlobalFeedback? _
   { var choices = [];
     choices.push({isCorrect:true, text:answer, feedback:feedback, weight:null});
-    return { type: "Short", choices:choices, globalFeedback:globalFeedback}; }
+    return { 
+      type: "Short", 
+      choices:choices, 
+      globalFeedback:globalFeedback,
+      calculateScore: function(selectedChoices) {
+        return selectedChoices.some(c => c.isCorrect) ? 100 : 0;
+      }
+  }; }
 
 ///////////////////
 NumericalAnswerType "{#... }" // Number ':' Range / Number '..' Number / Number

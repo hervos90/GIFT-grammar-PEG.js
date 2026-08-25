@@ -280,7 +280,14 @@ function peg$parse(input, options) {
       peg$c61 = peg$otherExpectation("Single short answer { ... }"),
       peg$c62 = function(answer, feedback, globalFeedback) { var choices = [];
           choices.push({isCorrect:true, text:answer, feedback:feedback, weight:null});
-          return { type: "Short", choices:choices, globalFeedback:globalFeedback}; },
+          return { 
+            type: "Short", 
+            choices:choices, 
+            globalFeedback:globalFeedback,
+            calculateScore: function(selectedChoices) {
+              return selectedChoices.some(c => c.isCorrect) ? 100 : 0;
+            }
+        }; },
       peg$c63 = peg$otherExpectation("{#... }"),
       peg$c64 = function(numericalAnswers, globalFeedback) { return { type:"Numerical", 
                    choices:numericalAnswers, 
