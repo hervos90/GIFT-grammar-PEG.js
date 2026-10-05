@@ -1,11 +1,12 @@
 const { parse } = require("../pegjs-gift.js");
-const { normalizeSelection } = require("./calculateSelection.js");
 
 /**
  * Vérifie une réponse pour une question Short (ShortAnswer).
- * Retourne un objet contenant le score, la sélection normalisée et divers
- * indicateurs de validation (présence de choix, présence d'une bonne réponse,
- * validation des poids, etc.).
+ * La réponse de l'étudiant est une chaîne unique (pas un tableau).
+ * Compare case-insensitively et retourne le score/poids du choix trouvé.
+ * 
+ * Note: Une question Short peut avoir plusieurs variantes de réponse correcte
+ * avec des poids différents (e.g., {=%100%Paris =%75%Paree =%50%Capitale})
  */
 function checkShortAnswer(giftText, studentSelection) {
   const questions = parse(giftText);
@@ -15,44 +16,58 @@ function checkShortAnswer(giftText, studentSelection) {
 
   const question = questions[0];
   const correctOptions = (question.choices || []).filter(c => c.isCorrect);
-  if (correctOptions.length > 1) {
-    throw new Error("Not a Short question");
-  }
 
-  const normalized = normalizeSelection(question, studentSelection);
-  const selection = Array.isArray(normalized)
-    ? normalized
-    : (normalized === undefined || normalized === null ? [] : [normalized]);
-  const rawSelectionCount = Array.isArray(studentSelection)
-    ? studentSelection.length
-    : (studentSelection === undefined || studentSelection === null ? 0 : 1);
-
+  // Validation: question must have at least one choice
   const hasChoices = Array.isArray(question.choices) && question.choices.length > 0;
-  const questionHasChoices = hasChoices;
   const questionValidationError = hasChoices ? null : 'No answer choices provided';
 
+  // Validation: question must have a correct answer defined
   const hasCorrectAnswer = correctOptions.length > 0;
   const answerValidationError = hasCorrectAnswer ? null : 'No correct answer defined for this question';
 
-  const selectedCorrectOptionsCount = selection.filter(c => c && c.isCorrect).length;
-  const hasSingleSelectedAnswer = rawSelectionCount === 1;
-  const score = hasChoices && hasCorrectAnswer && hasSingleSelectedAnswer && selectedCorrectOptionsCount === 1 ? 100 : 0;
+  // Initialize default values
+  let matchedChoice = null;
+  let studentText = '';
+  let score = 0;
+  let feedback = null;
+
+  // Process student answer if provided
+  if (studentSelection !== undefined && studentSelection !== null) {
+    studentText = String(studentSelection).trim();
+    const studentTextLower = studentText.toLowerCase();
+
+    // Find matching choice (case-insensitive)
+    if (hasChoices) {
+      matchedChoice = question.choices.find(c => 
+        c && c.text && c.text.text && 
+        String(c.text.text).toLowerCase() === studentTextLower
+      ) || null;
+    }
+
+    // Return weight of matched choice (default 100 when weight is null/undefined)
+    if (matchedChoice) {
+      const weight = (typeof matchedChoice.weight === 'number') ? matchedChoice.weight : 100;
+      score = Math.min(100, Math.max(-100, weight));
+    }
+
+    feedback = matchedChoice && matchedChoice.feedback ? matchedChoice.feedback.text : null;
+  }
+
   const isCorrect = score > 0;
-  const feedback = selection.map(c => (c && c.feedback) ? c.feedback.text : null);
 
   return {
     question: question,
     score: score,
     isCorrect: isCorrect,
-    selected: selection,
-    questionHasChoices: questionHasChoices,
+    selected: matchedChoice,
+    questionHasChoices: hasChoices,
     questionValidationError: questionValidationError,
     hasCorrectAnswer: hasCorrectAnswer,
     answerValidationError: answerValidationError,
     correctChoices: correctOptions,
     totalCorrectOptions: correctOptions.length,
-    userSelectedCount: selection.length,
-    selectedCorrectOptionsCount: selectedCorrectOptionsCount,
+    matchedChoice: matchedChoice,
+    studentText: studentText,
     feedback: feedback,
     globalFeedback: question.globalFeedback ? question.globalFeedback.text : null
   };

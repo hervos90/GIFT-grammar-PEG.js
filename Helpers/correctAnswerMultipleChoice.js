@@ -48,7 +48,7 @@ function checkMultipleChoiceAnswer(giftText, studentSelection) {
   // fourni par le parser (implémente l'addition des fractions sélectionnées
   // et gère les valeurs négatives pour les pénalités). Si la méthode est
   // absente ou qu'il n'y a pas de choix, on renvoie 0.
-  // Le score final est limité à l'intervalle [-100, 100].
+
   const score = (typeof question.calculateScore === 'function' && hasChoices)
     ? question.calculateScore(normalized)
     : 0;
@@ -60,22 +60,20 @@ function checkMultipleChoiceAnswer(giftText, studentSelection) {
   const userSelectedCount = (normalized || []).length;
   const selectedCorrectOptionsCount = (normalized || []).filter(c => c && c.isCorrect).length;
 
-  // Calcule la somme des poids pour les choix marqués corrects. Si des poids
-  // sont fournis (via `%...%` dans le GIFT), ils sont additionnés ici afin
-  // de vérifier si la somme fait bien 100 (validation). Cette valeur est
-  // rendue dans `weightedCorrectTotal` et `weightTotalValid`.
-  const weightedCorrectTotal = (question.choices || []).reduce((sum, choice) => {
-    if (choice.isCorrect && typeof choice.weight === 'number') {
+  // Calcule la somme des poids POSITIFS. Si des poids sont fournis (via `%...%` 
+  // dans le GIFT), on additione tous les poids positifs (qui correspondent aux bonnes 
+  // réponses) afin de vérifier si la somme fait bien 100 (validation). 
+  // Les poids négatifs (pénalités) ne sont pas inclus dans cette vérification.
+  const positiveWeightTotal = (question.choices || []).reduce((sum, choice) => {
+    if (typeof choice.weight === 'number' && choice.weight > 0) {
       return sum + choice.weight;
     }
     return sum;
   }, 0);
-  const hasWeightedCorrect = (question.choices || []).some(c => c.isCorrect && typeof c.weight === 'number');
-  const hasUnweightedCorrect = (question.choices || []).some(c => c.isCorrect && (c.weight === null || c.weight === undefined));
-  // Si des poids sont fournis pour certains choix corrects, on exige que
-  //tous les choix corrects aient un poids et que la somme soit proche de 100.
-  const weightTotalValid = !hasWeightedCorrect || (!hasUnweightedCorrect && Math.abs(weightedCorrectTotal - 100) < 1e-4);
-  const weightValidationError = weightTotalValid ? null : 'Weighted correct choices total must equal 100';
+  const hasPositiveWeights = (question.choices || []).some(c => typeof c.weight === 'number' && c.weight > 0);
+  // Si des poids positifs sont fournis, on exige que leur somme soit proche de 100.
+  const positiveWeightTotalValid = !hasPositiveWeights || Math.abs(positiveWeightTotal - 100) < 1e-4;
+  const weightValidationError = positiveWeightTotalValid ? null : 'Weighted positive choices total must equal 100';
 
   return {
     question: question,
@@ -90,8 +88,10 @@ function checkMultipleChoiceAnswer(giftText, studentSelection) {
     totalCorrectOptions: totalCorrectOptions,
     userSelectedCount: userSelectedCount,
     selectedCorrectOptionsCount: selectedCorrectOptionsCount,
-    weightedCorrectTotal: weightedCorrectTotal,
-    weightTotalValid: weightTotalValid,
+    positiveWeightTotal: positiveWeightTotal,
+    weightedCorrectTotal: positiveWeightTotal,
+    positiveWeightTotalValid: positiveWeightTotalValid,
+    weightTotalValid: positiveWeightTotalValid,
     weightValidationError: weightValidationError,
     feedback: feedback,
     globalFeedback: question.globalFeedback ? question.globalFeedback.text : null

@@ -211,7 +211,7 @@
         peg$c36 = function() {return false},
         peg$c37 = peg$otherExpectation("{=correct choice ~incorrect choice ... }"),
         peg$c38 = function(choices, globalFeedback) { return { 
-              type: "MC", 
+              type:  areAllCorrect(choices) ? "Short" : "MC", 
               choices:choices, 
               globalFeedback:globalFeedback,
               calculateScore: function(selectedChoices) {
@@ -284,9 +284,7 @@
               type: "Short", 
               choices:choices, 
               globalFeedback:globalFeedback,
-              calculateScore: function(selectedChoices) {
-                return selectedChoices.some(c => c.isCorrect) ? 100 : 0;
-              }
+              
           }; },
         peg$c63 = peg$otherExpectation("{#... }"),
         peg$c64 = function(numericalAnswers, globalFeedback) { return { type:"Numerical", 
@@ -780,7 +778,7 @@
                         if (s10 === peg$FAILED) {
                           s10 = peg$parseTrueFalseAnswer();
                           if (s10 === peg$FAILED) {
-                            s10 = peg$parseMCAnswers();
+                            s10 = peg$parseMultipleChoiceOrShortAnswerChoices();
                             if (s10 === peg$FAILED) {
                               s10 = peg$parseNumericalAnswerType();
                               if (s10 === peg$FAILED) {
@@ -1186,7 +1184,7 @@
       return s0;
     }
 
-    function peg$parseMCAnswers() {
+    function peg$parseMultipleChoiceOrShortAnswerChoices() {
       var s0, s1, s2, s3, s4;
 
       peg$silentFails++;
@@ -3374,10 +3372,6 @@
           case "Matching":
             question.matchPairs = answers.matchPairs;
             break;
-        }
-        // check for MC that's actually a short answer (all correct answers)
-        if (question.type == "MC" && areAllCorrect(question.choices)) {
-          question.type = "Short";
         }
         question.id = questionId;
         question.tags = questionTags;
