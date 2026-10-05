@@ -33,19 +33,19 @@ describe('vérifierRéponseQCM', () => {
     expect(resWrong.userSelectedCount).toBe(1);
     expect(resWrong.selectedCorrectOptionsCount).toBe(0);
     expect(resWrong.isCorrect).toBe(false);
-    expect(resWrong.weightTotalValid).toBe(true);
+    expect(resWrong.positiveWeightTotalValid).toBe(true);
 
     const resPartial = checkMC(gift, [0,1]);
     expect(resPartial.score).toBeCloseTo(0, 4);
     expect(resPartial.userSelectedCount).toBe(2);
     expect(resPartial.selectedCorrectOptionsCount).toBe(1);
     expect(resPartial.isCorrect).toBe(false);
-    expect(resPartial.weightTotalValid).toBe(true);
+    expect(resPartial.positiveWeightTotalValid).toBe(true);
 
     const resCorrectTwo = checkMC(gift, [0,2]);
     expect(resCorrectTwo.score).toBeCloseTo(100, 4);
     expect(resCorrectTwo.isCorrect).toBe(true);
-    expect(resCorrectTwo.weightTotalValid).toBe(true);
+    expect(resCorrectTwo.positiveWeightTotalValid).toBe(true);
   });
 
   test('sélection vide ou indéfinie renvoie 0', () => {
@@ -65,8 +65,8 @@ describe('vérifierRéponseQCM', () => {
     expect(resSingle.totalCorrectOptions).toBe(3);
     expect(resSingle.userSelectedCount).toBe(1);
     expect(resSingle.selectedCorrectOptionsCount).toBe(1);
-    expect(resSingle.weightedCorrectTotal).toBeCloseTo(100, 4);
-    expect(resSingle.weightTotalValid).toBe(true);
+    expect(resSingle.positiveWeightTotal).toBeCloseTo(100, 4);
+    expect(resSingle.positiveWeightTotalValid).toBe(true);
 
     const resCorrectThree = checkMC(gift, [0,1,3]);
     expect(resCorrectThree.score).toBeCloseTo(100, 4);
@@ -74,7 +74,7 @@ describe('vérifierRéponseQCM', () => {
     expect(resCorrectThree.userSelectedCount).toBe(3);
     expect(resCorrectThree.selectedCorrectOptionsCount).toBe(3);
     expect(resCorrectThree.isCorrect).toBe(true);
-    expect(resCorrectThree.weightTotalValid).toBe(true);
+    expect(resCorrectThree.positiveWeightTotalValid).toBe(true);
 
     const resPenaltyOne = checkMC(gift, [2]);
     //--score négagatif attendu
@@ -83,30 +83,46 @@ describe('vérifierRéponseQCM', () => {
     expect(resPenaltyOne.userSelectedCount).toBe(1);
     expect(resPenaltyOne.selectedCorrectOptionsCount).toBe(0);
     expect(resPenaltyOne.isCorrect).toBe(false);
-    expect(resPenaltyOne.weightTotalValid).toBe(true);
+    expect(resPenaltyOne.positiveWeightTotalValid).toBe(true);
 
     const resMixed = checkMC(gift, [0,2]);
     expect(resMixed.score).toBeCloseTo(-66.66667, 4);
     expect(resMixed.userSelectedCount).toBe(2);
     expect(resMixed.selectedCorrectOptionsCount).toBe(1);
     expect(resMixed.isCorrect).toBe(false);
-    expect(resMixed.weightTotalValid).toBe(true);
+    expect(resMixed.positiveWeightTotalValid).toBe(true);
 
     const resAllSelected = checkMC(gift, [0,1,2,3,4]);
     expect(resAllSelected.score).toBeCloseTo(-100, 4);
     expect(resAllSelected.userSelectedCount).toBe(5);
     expect(resAllSelected.selectedCorrectOptionsCount).toBe(3);
     expect(resAllSelected.isCorrect).toBe(false);
-    expect(resAllSelected.weightTotalValid).toBe(true);
+    expect(resAllSelected.positiveWeightTotalValid).toBe(true);
   });
 
-  test('contrôle MC pondéré : le total des bons poids doit être 100', () => {
+  test('contrôle MC pondéré : le total des poids positifs doit être 100', () => {
     const invalidGift = `:: Capitales européennes ::\nSélectionnez lesquelles? {=%50%Paris =%40%Berlin ~%-10%Londres =%20%Rome}`;
-    const resInvalid = checkMC(invalidGift, [0,1,3]);
-    expect(resInvalid.weightedCorrectTotal).toBeCloseTo(110, 4);
-    expect(resInvalid.weightTotalValid).toBe(false);
-    expect(resInvalid.weightValidationError).toBe('Weighted correct choices total must equal 100');
+    const resInvalid = checkMC(invalidGift, [0,2,3]);
+    expect(resInvalid.positiveWeightTotal).toBeCloseTo(110, 4);
+    expect(resInvalid.positiveWeightTotalValid).toBe(false);
+    expect(resInvalid.weightValidationError).toBe('Weighted positive choices total must equal 100');
   });
+
+  test('contrôle MC pondéré : le total des poids positifs doit être 100', () => {
+    const invalidGift = `:: Nom des continents ::\nSelect all of the options below which name a continent {
+    ~%33.33333%Africa
+    ~%33.33333%Asia
+    ~%-100%China
+    ~%33.33333%Antarctica
+    ~%-100%America}`;
+    const resInvalid = checkMC(invalidGift, [0,1,3,4]);
+    expect(resInvalid.isCorrect).toBe(false);
+    expect(resInvalid.positiveWeightTotalValid).toBe(true);
+  });
+
+
+  
+
 
   // Tests pour vérifier qu'une réponse correcte existe
   test('vérifier qu\'une réponse correcte existe - cas valide', () => {
