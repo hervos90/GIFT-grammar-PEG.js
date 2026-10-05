@@ -42,10 +42,6 @@
         question.matchPairs = answers.matchPairs;
         break;
     }
-    // check for MC that's actually a short answer (all correct answers)
-    if (question.type == "MC" && areAllCorrect(question.choices)) {
-      question.type = "Short";
-    }
     question.id = questionId;
     question.tags = questionTags;
     // Copy calculateScore method if it exists
@@ -117,7 +113,7 @@ Question
     title:QuestionTitle? _
     stem1:QuestionStem? _ 
     '{' _
-    answers:(MatchingAnswers / TrueFalseAnswer / MCAnswers / NumericalAnswerType / SingleCorrectShortAnswer / EssayAnswer ) _
+    answers:(MatchingAnswers / TrueFalseAnswer / MultipleChoiceOrShortAnswerChoices / NumericalAnswerType / SingleCorrectShortAnswer / EssayAnswer ) _
     '}' _
     stem2:(
       Comment / 
@@ -181,11 +177,11 @@ FalseType
   = ('FALSE' / 'F') {return false}
 
 ////////////////////
-MCAnswers "{=correct choice ~incorrect choice ... }"
+MultipleChoiceOrShortAnswerChoices "{=correct choice ~incorrect choice ... }"
   = choices:Choices _ 
     globalFeedback:GlobalFeedback? _
   { return { 
-      type: "MC", 
+      type:  areAllCorrect(choices) ? "Short" : "MC", 
       choices:choices, 
       globalFeedback:globalFeedback,
       calculateScore: function(selectedChoices) {
@@ -263,9 +259,7 @@ SingleCorrectShortAnswer "Single short answer { ... }"
       type: "Short", 
       choices:choices, 
       globalFeedback:globalFeedback,
-      calculateScore: function(selectedChoices) {
-        return selectedChoices.some(c => c.isCorrect) ? 100 : 0;
-      }
+      
   }; }
 
 ///////////////////
