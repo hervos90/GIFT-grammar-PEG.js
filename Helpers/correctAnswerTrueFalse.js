@@ -8,10 +8,12 @@ function checkTrueFalseAnswer(giftText, studentAnswer) {
   }
 
   var question = questions[0];
-  var isCorrect = studentAnswer === question.isTrue;
+  // var isCorrect = studentAnswer === question.isTrue;
+  var isCorrect = question.isCorrect(studentAnswer);
   var feedback = studentAnswer ? question.trueFeedback : question.falseFeedback;
 
   return {
+    question: question,
     isCorrect: isCorrect,
     correctAnswer: question.isTrue,
     feedback: feedback ? feedback.text : null,

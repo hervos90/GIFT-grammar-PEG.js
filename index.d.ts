@@ -141,11 +141,13 @@ export interface Category {
 export interface MultipleChoice extends Question {
   type: Extract<QuestionType, "MC">;
   choices: TextChoice[];
+  calculateScore(selectedChoices: TextChoice[]): number;
 }
 
 export interface ShortAnswer extends Question {
   type: Extract<QuestionType, "Short">;
   choices: TextChoice[];
+  calculateScore(selectedChoices: TextChoice[]): number;
 }
 
 export interface Numerical extends Question {
@@ -162,6 +164,8 @@ export interface TrueFalse extends Question {
   isTrue: boolean;
   trueFeedback: TextFormat | null;
   falseFeedback: TextFormat | null;
+  calculateScore(userAnswer: boolean): number;
+  isCorrect(userAnswer: boolean): boolean;
 }
 
 export interface Matching extends Question {
